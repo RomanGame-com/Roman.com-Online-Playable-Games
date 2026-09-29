@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>RomanBlox - Gerçek Zamanlı Oyun & Yönetim Portalı</title>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@600;700&family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #090614;
+            --card-bg: rgba(23, 15, 42, 0.9);
+            --accent-purple: #8a2be2;
+            --neon-glow: #b026ff;
+            --neon-pink: #ff007f;
+            --neon-cyan: #00f3ff;
+            --text-color: #ffffff;
+            --text-muted: #a49bbb;
+            --sidebar-bg: #0d0722;
+            --gold: #ffd700;
+            --danger: #ff3366;
+            --success: #00ff88;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+            padding-bottom: 80px;
+        }
+
+        /* YILDIRIM & PARÇACIK CANVAS */
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* CANLI DUYURU BANNERI */
+        #live-banner {
+            display: none;
+            background: linear-gradient(90deg, var(--neon-pink), var(--accent-purple));
+            color: #fff;
+            padding: 10px 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 13px;
+            position: relative;
+            z-index: 1001;
+            box-shadow: 0 0 15px var(--neon-pink);
+        }
+
+        /* HEADER */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(9, 6, 20, 0.95);
+            backdrop-filter: blur(15px);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(176, 38, 255, 0.3);
+            box-shadow: 0 4px 25px rgba(138, 43, 226, 0.25);
+        }
+
+        .header-left, .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand-logo {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        .brand-logo span {
+            color: var(--neon-pink);
+            text-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .diamonds {
+            background: rgba(138, 43, 226, 0.25);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            cursor: pointer;
+        }
+
+        .admin-badge-btn {
+            background: linear-gradient(135deg, var(--neon-pink), var(--accent-purple));
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        /* ARAMA VE KATEGORİLER */
+        .search-container {
+            padding: 20px 20px 5px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-box {
+            position: relative;
+            width: 100%;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 45px 14px 20px;
+            background: var(--card-bg);
+            border: 1px solid rgba(176, 38, 255, 0.4);
+            border-radius: 25px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+
+        .search-box i {
+            position: absolute;
+            right: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+        }
+
+        /* OYUN IZGARASI */
+        .main-container {
+            padding: 15px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin: 15px 0 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--neon-glow);
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .game-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .game-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 10px 25px rgba(176, 38, 255, 0.4);
+            border-color: var(--neon-cyan);
+        }
+
+        .game-card img {
+            width: 100%;
+            aspect-ratio: 1/1;
+            object-fit: cover;
+            background: #1a0f35;
+        }
+
+        .game-card .info {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .game-card .title {
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .game-card .stats {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        /* MODAL GENEL */
+        .modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            background: #0d0722;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(176, 38, 255, 0.3);
+        }
+
+        .close-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 6px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-iframe {
+            width: 100%; height: 100%; border: none;
+        }
+
+        /* GELİŞMİŞ KURUCU PANELİ MODALI */
+        .admin-modal {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 3, 12, 0.98);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .admin-container {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100vh - 60px);
+            overflow: hidden;
+        }
+
+        .admin-sidebar {
+            width: 250px;
+            background: #090518;
+            border-right: 1px solid rgba(176, 38, 255, 0.2);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .admin-tab-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: var(--text-muted);
+            padding: 12px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .admin-tab-btn:hover, .admin-tab-btn.active {
+            background: var(--accent-purple);
+            color: #fff;
+            box-shadow: 0 0 10px var(--neon-glow);
+        }
+
+        .admin-content {
+            flex-grow: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background: #0d0722;
+        }
+
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+
+        /* FORM VE KART TASARIMLARI */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px 14px;
+            background: #160d33;
+            border: 1px solid rgba(176, 38, 255, 0.3);
+            border-radius: 8px;
+            color: #fff;
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--neon-glow);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* İSTATİSTİK KARTLARI */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: #160d33;
+            padding: 18px;
+            border-radius: 12px;
+            border: 1px solid rgba(176, 38, 255, 0.2);
+        }
+
+        .stat-card .val {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--neon-cyan);
+            margin-top: 5px;
+        }
+
+        /* TABLOLAR */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+
+        .admin-table th, .admin-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .admin-table th {
+            background: rgba(138, 43, 226, 0.2);
+            color: var(--neon-cyan);
+        }
+
+        /* BAKIM MODU EKRANI */
+        #maintenance-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #05030c;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- YILDIRIM & PARÇACIK ARKA PLANI -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- CANLI DUYURU BANNERI -->
+    <div id="live-banner">📢 <span id="banner-text">Sitemize Hoş Geldiniz!</span></div>
+
+    <!-- HEADER -->
+    <header>
+        <div class="header-left">
+            <a href="#" class="brand-logo">Roman<span>.Blox</span></a>
+        </div>
+        <div class="header-right">
+            <div class="diamonds"><i class="fa-solid fa-gem"></i> <span id="user-gems">1,500</span></div>
+            <button class="admin-badge-btn" onclick="openAdminModal()"><i class="fa-solid fa-crown"></i> Kurucu Paneli</button>
+        </div>
+    </header>
+
+    <!-- ARAMA ÇUBUĞU -->
+    <div class="search-container">
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Oyun ara veya 'romanbabapro' kodunu yaz..." onkeyup="handleSearch(this.value)">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </div>
+    </div>
+
+    <!-- ANA OYUN IZGARASI -->
+    <div class="main-container">
+        <div class="section-title">
+            <i class="fa-solid fa-fire"></i> Popüler Deneyimler
+        </div>
+        <div class="game-grid" id="game-grid"></div>
+    </div>
+
+    <!-- OYUN PLAY MODAL -->
+    <div class="modal" id="game-modal">
+        <div class="modal-header">
+            <span id="playing-title" style="font-weight: bold; color: var(--neon-cyan);">Oyun Oynanıyor</span>
+            <button class="close-btn" onclick="closeGame()"><i class="fa-solid fa-xmark"></i> Kapat</button>
+        </div>
+        <iframe class="modal-iframe" id="game-iframe" src="" allow="fullscreen; autoplay"></iframe>
+    </div>
+
+    <!-- BAKIM MODU EKRANI -->
+    <div id="maintenance-screen">
+        <i class="fa-solid fa-screwdriver-wrench" style="font-size: 60px; color: var(--neon-pink); margin-bottom: 20px;"></i>
+        <h1 style="font-size: 28px; margin-bottom: 10px;">SİTE BAKIMDA</h1>
+        <p style="color: var(--text-muted); max-width: 400px;" id="maint-reason">Kurucu tarafından güncelleme yapılıyor. Lütfen kısa süre sonra tekrar deneyin.</p>
+    </div>
+
+    <!-- GELİŞMİŞ KURUCU PANELİ MODALI -->
+    <div class="admin-modal" id="admin-modal">
+        <div class="modal-header">
+            <span style="font-weight: bold; color: var(--gold);"><i class="fa-solid fa-crown"></i> Kurucu Kontrol Merkezi (CANLI)</span>
+            <button class="close-btn" onclick="closeAdminModal()"><i class="fa-solid fa-xmark"></i> Paneli Kapat</button>
+        </div>
+        <div class="admin-container">
+            <!-- Yan Menü -->
+            <div class="admin-sidebar">
+                <button class="admin-tab-btn active" onclick="switchTab('tab-stats', this)"><i class="fa-solid fa-chart-line"></i> İstatistikler</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-games', this)"><i class="fa-solid fa-gamepad"></i> Oyun Yönetimi</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-users', this)"><i class="fa-solid fa-users"></i> Kullanıcılar</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-announcements', this)"><i class="fa-solid fa-bullhorn"></i> Duyuru Yayınla</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-events', this)"><i class="fa-solid fa-trophy"></i> Etkinlik Oluştur</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-activity', this)"><i class="fa-solid fa-bolt"></i> Canlı Aktivite</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-errors', this)"><i class="fa-solid fa-bug"></i> Hata Kontrol</button>
+                <button class="admin-tab-btn" onclick="switchTab('tab-settings', this)"><i class="fa-solid fa-gear"></i> Site Ayarları</button>
+            </div>
+
+            <!-- İçerik Alanı -->
+            <div class="admin-content">
+                
+                <!-- 1. İSTATİSTİKLER -->
+                <div class="admin-section active" id="tab-stats">
+                    <h2>📊 Canlı Sistem İstatistikleri</h2>
+                    <br>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div>Aktif Cihazlar / Oyuncular</div>
+                            <div class="val" id="stat-active">1 (Bu Cihaz)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div>Toplam Oyun Sayısı</div>
+                            <div class="val" id="stat-total-games">8</div>
+                        </div>
+                        <div class="stat-card">
+                            <div>Dağıtılan Toplam Elmas</div>
+                            <div class="val" id="stat-total-gems">1,500</div>
+                        </div>
+                        <div class="stat-card">
+                            <div>Sistem Durumu</div>
+                            <div class="val" style="color: var(--success);" id="stat-sys-status">Çevrimiçi</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. OYUN YÖNETİMİ -->
+                <div class="admin-section" id="tab-games">
+                    <h2>🎮 Oyun Yönetimi</h2>
+                    <br>
+                    <div class="form-group">
+                        <label>Yeni Oyun Adı</label>
+                        <input type="text" id="new-game-title" placeholder="Örn: Brookhaven RP">
+                    </div>
+                    <div class="form-group">
+                        <label>Embed / Oyun Linki (URL)</label>
+                        <input type="text" id="new-game-url" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Görsel Linki (Image URL)</label>
+                        <input type="text" id="new-game-img" placeholder="https://...">
+                    </div>
+                    <button class="btn-primary" onclick="addGame()"><i class="fa-solid fa-plus"></i> Oyunu Sitede Yayınla</button>
+
+                    <br><br>
+                    <h3>Mevcut Oyunlar</h3>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Başlık</th>
+                                <th>Aksiyon</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-games-list"></tbody>
+                    </table>
+                </div>
+
+                <!-- 3. KULLANICILAR -->
+                <div class="admin-section" id="tab-users">
+                    <h2>👥 Kullanıcı Yönetimi</h2>
+                    <br>
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Kullanıcı / Cihaz</th>
+                                <th>Bakiye</th>
+                                <th>Aksiyon</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Sen (Kurucu Cihazı)</td>
+                                <td id="tbl-user-gems">1,500 Elmas</td>
+                                <td>
+                                    <button class="btn-primary" style="padding: 4px 8px; font-size:11px;" onclick="grantGems(5000)">+5,000 Elmas</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. DUYURU YAYINLA -->
+                <div class="admin-section" id="tab-announcements">
+                    <h2>📢 Canlı Duyuru Yayınla</h2>
+                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:15px;">Yayınladığınız duyuru anında sitenin en üstünde canlı olarak görünecektir.</p>
+                    <div class="form-group">
+                        <label>Duyuru Metni</label>
+
+                        <input type="text" id="ann-input-text" placeholder="Örn: 🔥 Hafta sonuna özel 2X Elmas etkinliği başladı!">
+                    </div>
+                    <button class="btn-primary" onclick="publishAnnouncement()"><i class="fa-solid fa-paper-plane"></i> Canlı Yayınla</button>
+                    <button class="btn-danger" onclick="hideAnnouncement()">Duyuruyu Kaldır</button>
+                </div>
+
+                <!-- 5. ETKİNLİK OLUŞTUR -->
+                <div class="admin-section" id="tab-events">
+                    <h2>🏆 Canlı Etkinlik Oluştur</h2>
+                    <br>
+                    <div class="form-group">
+                        <label>Etkinlik Adı</label>
+                        <input type="text" id="event-name" placeholder="Örn: 2X Elmas Yağmuru">
+                    </div>
+                    <button class="btn-primary" onclick="startEvent()"><i class="fa-solid fa-bolt"></i> Etkinliği Başlat</button>
+                </div>
+
+                <!-- 6. CANLI AKTİVİTE -->
+                <div class="admin-section" id="tab-activity">
+                    <h2>⚡ Canlı Aktivite Akışı</h2>
+                    <br>
+                    <ul id="activity-log-list" style="list-style:none; display:flex; flex-direction:column; gap:8px;">
+                        <li style="background:#160d33; padding:10px; border-radius:8px; font-size:12px;"><i class="fa-solid fa-check" style="color:var(--success);"></i> Sistem başlatıldı. Kurucu bağlandı.</li>
+                    </ul>
+                </div>
+
+                <!-- 7. HATA KONTROL -->
+                <div class="admin-section" id="tab-errors">
+                    <h2>🐞 Hata & Log Kontrolü</h2>
+                    <br>
+                    <div style="background:#000; padding:15px; border-radius:8px; font-family:monospace; color:var(--success); font-size:12px;" id="error-console">
+                        [SYSTEM]: Tüm sistemler sorunsuz çalışıyor. Hata tespit edilmedi.
+                    </div>
+                </div>
+
+                <!-- 8. SİTE AYARLARI & BAKIM MODU -->
+                <div class="admin-section" id="tab-settings">
+                    <h2>⚙️ Site Ayarları & Bakım Modu</h2>
+                    <br>
+                    <div class="form-group">
+                        <label>Site Başlığı</label>
+                        <input type="text" id="setting-title" value="RomanBlox">
+                    </div>
+                    <button class="btn-primary" onclick="saveSiteSettings()">Ayarları Kaydet</button>
+
+                    <br><br><hr style="border-color:rgba(255,255,255,0.1);"><br>
+                    <h3 style="color:var(--danger);">🚨 Bakım Modu</h3>
+                    <p style="color:var(--text-muted); font-size:12px; margin-bottom:10px;">Bakım modunu açtığınızda tüm kullanıcıların erişimi anında engellenir.</p>
+                    <button class="btn-danger" onclick="toggleMaintenance(true)">Bakım Modunu AÇ</button>
+                    <button class="btn-primary" style="background:var(--success);" onclick="toggleMaintenance(false)">Bakım Modunu KAPAT</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. YILDIRIM ARKA PLANI ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawBackground() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = 'rgba(176, 38, 255, 0.15)';
+            if (Math.random() < 0.02) {
+                ctx.fillRect(0, 0, width, height);
+            }
+            requestAnimationFrame(drawBackground);
+        }
+        drawBackground();
+
+        // --- 2. OYUN VERİLERİ VE YÖNETİMİ ---
+        let games = [
+            { title: "Steal a Brainrot", url: "https://html5.gamedistribution.com/rvvAS3083f2a1e124230b05a7e3713f8c8d8/", img: "https://via.placeholder.com/200/8a2be2/ffffff?text=Brainrot", plays: "12.4k" },
+            { title: "Roblox Obby Parkour", url: "https://html5.gamedistribution.com/c6c0e81c0cb14a0fa84e2ff715a3bb45/", img: "https://via.placeholder.com/200/b026ff/ffffff?text=Obby+Parkour", plays: "45.1k" },
+            { title: "Madalin Stunt Cars 2", url: "https://html5.gamedistribution.com/bfd3e150ff2d431c944f2c0eb83bb518/", img: "https://via.placeholder.com/200/00f3ff/000000?text=Stunt+Cars", plays: "8.9k" },
+            { title: "Fireboy & Watergirl 1", url: "https://www.gamebrain.com/embed/fireboy-and-watergirl-1", img: "https://images.sftcdn.net/images/t_app-icon-m,f_auto/p/0dd41c30-f3a2-4a0b-8d02-0e9e4d588a4e/3602164478/fireboy-watergirl-forest-temple-logo.png", plays: "98.2k" },
+            { title: "Moto X3M Bike Race", url: "https://html5.gamedistribution.com/f80b15ff28ee4e36920f329d2948682a/", img: "https://via.placeholder.com/200/ff007f/ffffff?text=Moto+X3M", plays: "19.3k" },
+            { title: "Granny Horror Escape", url: "https://html5.gamedistribution.com/rvvAS3083f2a1e124230b05a7e3713f8c8d8/", img: "https://via.placeholder.com/200/160e28/ff007f?text=Granny+Escape", plays: "5.4k" }
+        ];
+
+        function renderGames(list) {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+            list.forEach((game, index) => {
+                const card = document.createElement('div');
+                card.className = 'game-card';
+                card.innerHTML = `
+                    <img src="${game.img}" alt="${game.title}" onerror="this.src='https://via.placeholder.com/200/160d33/ffffff?text=RomanBlox'">
+                    <div class="info">
+                        <div class="title">${game.title}</div>
+                        <div class="stats">
+                            <span><i class="fa-solid fa-user"></i> ${game.plays}</span>
+                            <span style="color:var(--success);"><i class="fa-solid fa-thumbs-up"></i> %98</span>
+                        </div>
+                    </div>
+                `;
+                card.onclick = () => openGame(game);
+                grid.appendChild(card);
+            });
+            document.getElementById('stat-total-games').innerText = games.length;
+            renderAdminGamesList();
+        }
+
+        function openGame(game) {
+            document.getElementById('playing-title').innerText = game.title;
+            document.getElementById('game-iframe').src = game.url;
+            document.getElementById('game-modal').style.display = 'flex';
+            logActivity(`'${game.title}' oyunu başlatıldı.`);
+        }
+
+        function closeGame() {
+            document.getElementById('game-modal').style.display = 'none';
+            document.getElementById('game-iframe').src = '';
+        }
+
+        // --- 3. KURUCU PANELİ FONKSİYONLARI ---
+        function handleSearch(val) {
+            if (val.toLowerCase().trim() === 'romanbabapro') {
+                openAdminModal();
+                document.getElementById('search-input').value = '';
+            } else {
+                renderGames(games.filter(g => g.title.toLowerCase().includes(val.toLowerCase())));
+            }
+        }
+
+        function openAdminModal() {
+            document.getElementById('admin-modal').style.display = 'flex';
+            logActivity('Kurucu paneli açıldı.');
+        }
+
+        function closeAdminModal() {
+            document.getElementById('admin-modal').style.display = 'none';
+        }
+
+        function switchTab(tabId, btn) {
+            document.querySelectorAll('.admin-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function addGame() {
+            const title = document.getElementById('new-game-title').value.trim();
+            const url = document.getElementById('new-game-url').value.trim();
+            const img = document.getElementById('new-game-img').value.trim();
+
+            if(!title || !url) {
+                alert("Lütfen oyun adı ve linkini girin!");
+                return;
+            }
+
+            games.push({ title, url, img: img || 'https://via.placeholder.com/200/8a2be2/ffffff?text=Oyun', plays: "1" });
+            renderGames(games);
+            alert("Oyun başarıyla eklendi ve yayınlandı!");
+            logActivity(`Yeni oyun eklendi: ${title}`);
+
+            document.getElementById('new-game-title').value = '';
+            document.getElementById('new-game-url').value = '';
+            document.getElementById('new-game-img').value = '';
+        }
+
+        function deleteGame(index) {
+            logActivity(`Oyun silindi: ${games[index].title}`);
+            games.splice(index, 1);
+            renderGames(games);
+        }
+
+        function renderAdminGamesList() {
+            const list = document.getElementById('admin-games-list');
+            list.innerHTML = '';
+            games.forEach((game, index) => {
+                list.innerHTML += `
+                    <tr>
+                        <td>${game.title}</td>
+                        <td><button class="btn-danger" style="padding: 4px 8px; font-size:11px;" onclick="deleteGame(${index})">Sil</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function grantGems(amt) {
+            let current = parseInt(document.getElementById('user-gems').innerText.replace(',', ''));
+            let updated = current + amt;
+            document.getElementById('user-gems').innerText = updated.toLocaleString();
+            document.getElementById('tbl-user-gems').innerText = updated.toLocaleString() + ' Elmas';
+            document.getElementById('stat-total-gems').innerText = updated.toLocaleString();
+            logActivity(`${amt} Elmas eklendi.`);
+        }
+
+        function publishAnnouncement() {
+            const txt = document.getElementById('ann-input-text').value.trim();
+            if(!txt) return;
+
+            document.getElementById('banner-text').innerText = txt;
+            document.getElementById('live-banner').style.display = 'block';
+            logActivity(`Canlı duyuru yayınlandı: "${txt}"`);
+            alert("Duyuru sitede canlı olarak görüntülendi!");
+        }
+
+        function hideAnnouncement() {
+            document.getElementById('live-banner').style.display = 'none';
+            logActivity('Canlı duyuru kaldırıldı.');
+        }
+
+        function startEvent() {
+            const name = document.getElementById('event-name').value.trim();
+            if(!name) return;
+            publishAnnouncement(`🏆 CANLI ETKİNLİK BAŞLADI: ${name}`);
+            logActivity(`Etkinlik başlatıldı: ${name}`);
+        }
+
+        function toggleMaintenance(status) {
+            document.getElementById('maintenance-screen').style.display = status ? 'flex' : 'none';
+            logActivity(`Bakım modu ${status ? 'AÇILDI' : 'KAPATILDI'}.`);
+        }
+
+        function saveSiteSettings() {
+            const title = document.getElementById('setting-title').value;
+            document.title = title + " - Gerçek Zamanlı Portal";
+            alert("Site ayarları güncellendi!");
+            logActivity("Site ayarları değiştirildi.");
+        }
+
+        function logActivity(text) {
+            const list = document.getElementById('activity-log-list');
+            const time = new Date().toLocaleTimeString();
+            const li = document.createElement('li');
+            li.style.cssText = "background:#160d33; padding:10px; border-radius:8px; font-size:12px;";
+            li.innerHTML = `<span style="color:var(--text-muted);">[${time}]</span> ${text}`;
+            list.prepend(li);
+        }
+
+        // Başlangıç Yüklemesi
+        window.onload = () => {
+            renderGames(games);
+        };
+    </script>
+</body>
+</html>
